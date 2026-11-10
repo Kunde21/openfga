@@ -240,3 +240,18 @@ func (b *BoundedTupleReader) done() {
 func (b *BoundedTupleReader) increaseReads() int {
 	return int(b.countReads.Add(1))
 }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher]. It counts as one read.
+func (b *BoundedTupleReader) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	if _, ok := b.RelationshipTupleReader.(storage.TTUDirectMatcher); !ok {
+		return false, nil
+	}
+	if err := b.bound(ctx, storage.OperationRead); err != nil {
+		return false, err
+	}
+	defer b.done()
+	return storage.ReadTTUDirectMatches(ctx, b.RelationshipTupleReader, store, filter, options, func(m storage.TTUDirectMatch) bool {
+		b.countItems.Add(1)
+		return yield(m)
+	})
+}

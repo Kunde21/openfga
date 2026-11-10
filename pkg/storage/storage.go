@@ -286,6 +286,64 @@ type RelationshipTupleWriter interface {
 	MaxTuplesPerWrite() int
 }
 
+// TTUDirectFilter selects the tupleset tuples Object#TuplesetRelation@<parent> whose parent object
+// has ComputedRelation assigned directly to one of Users. ParentTypes limits the parent types.
+type TTUDirectFilter struct {
+	Object           string
+	TuplesetRelation string
+	ParentTypes      []string
+	ComputedRelation string
+	Users            []string
+	// Unconditioned lists the pairs of parent type and user for which the model accepts both
+	// tuples of a match without a condition. A match without conditions that is not listed is
+	// not valid for the model and is left out.
+	Unconditioned []TTUDirectGrant
+	// Conditioned is true if the model accepts a condition on either tuple of a match. When it is
+	// false, a match with a condition is not valid for the model and the reader does not look
+	// for any.
+	Conditioned bool
+}
+
+// TTUDirectGrant is a parent type and a user, e.g. `folder` and `user:anne` or `user:*`.
+type TTUDirectGrant struct {
+	ParentType string
+	User       string
+}
+
+// TTUDirectMatch pairs a tupleset tuple with the parent's tuple that grants the computed relation.
+type TTUDirectMatch struct {
+	Tupleset *openfgav1.TupleKey
+	Parent   *openfgav1.TupleKey
+}
+
+// TTUDirectMatcher is implemented by readers that can resolve a tuple-to-userset whose computed
+// relation is directly assigned by joining the two levels in the datastore, so that both tuples
+// of a match come from one snapshot.
+//
+// The reader calls yield for each match until yield returns false. A match without conditions
+// that is listed in [TTUDirectFilter.Unconditioned] is enough to allow, so the reader yields at
+// most one of those per page and leaves out the page's other matches. Otherwise, if
+// [TTUDirectFilter.Conditioned] is set, it yields every match that has a condition on either
+// tuple. A reader may cover all the parents in one page or split them into several, each read
+// from its own snapshot. The reader holds its resources
+// (e.g. a database connection) while yield runs, so yield must not read from the datastore.
+//
+// When the reader cannot answer, ok is false, yield was not called, and the caller must fall back
+// to separate reads.
+type TTUDirectMatcher interface {
+	ReadTTUDirectMatches(ctx context.Context, store string, filter TTUDirectFilter, options ReadOptions, yield func(TTUDirectMatch) bool) (ok bool, err error)
+}
+
+// ReadTTUDirectMatches calls r.ReadTTUDirectMatches if r implements TTUDirectMatcher. Otherwise it
+// returns ok false.
+func ReadTTUDirectMatches(ctx context.Context, r RelationshipTupleReader, store string, filter TTUDirectFilter, options ReadOptions, yield func(TTUDirectMatch) bool) (bool, error) {
+	m, ok := r.(TTUDirectMatcher)
+	if !ok {
+		return false, nil
+	}
+	return m.ReadTTUDirectMatches(ctx, store, filter, options, yield)
+}
+
 // ReadStartingWithUserFilter specifies the filter options that will be used
 // to constrain the [RelationshipTupleReader.ReadStartingWithUser] query.
 type ReadStartingWithUserFilter struct {

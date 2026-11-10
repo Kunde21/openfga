@@ -69,3 +69,8 @@ func (c *ContextTracerWrapper) ReadStartingWithUser(ctx context.Context, store s
 
 	return c.OpenFGADatastore.ReadStartingWithUser(queryCtx, store, opts, options)
 }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher].
+func (c *ContextTracerWrapper) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	return storage.ReadTTUDirectMatches(queryContext(ctx), c.OpenFGADatastore, store, filter, options, yield)
+}

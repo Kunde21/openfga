@@ -211,3 +211,12 @@ func (c *CombinedTupleReader) ReadStartingWithUser(
 
 	return storage.NewCombinedIterator(iter1, iter2), nil
 }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher]. The datastore cannot see contextual tuples,
+// so a request that has any falls back to separate reads.
+func (c *CombinedTupleReader) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	if len(c.contextualTuplesOrderedByObjectID) > 0 {
+		return false, nil
+	}
+	return storage.ReadTTUDirectMatches(ctx, c.RelationshipTupleReader, store, filter, options, yield)
+}

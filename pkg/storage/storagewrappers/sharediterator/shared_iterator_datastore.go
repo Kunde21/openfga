@@ -754,3 +754,8 @@ func (s *sharedIterator) Stop() {
 }
 
 func (s *sharedIterator) IsOrdered() bool { return s.ir.IsOrdered() }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher]. Matches are not shared.
+func (sf *IteratorDatastore) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	return storage.ReadTTUDirectMatches(ctx, sf.RelationshipTupleReader, store, filter, options, yield)
+}

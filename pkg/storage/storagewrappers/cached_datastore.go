@@ -662,3 +662,9 @@ func (c *cachedIterator) flush() {
 	c.cache.Set(c.cacheKey, &storage.TupleIteratorCacheEntry{Tuples: records, LastModified: c.initializedAt}, storage.JitteredTTL(c.ttl, c.jitterPercentage))
 	tuplesCacheSizeHistogram.WithLabelValues(c.operation, c.method).Observe(float64(len(records)))
 }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher]. Matches are not cached, so it declines and
+// the caller uses the separate reads, which this wrapper serves from its iterator cache.
+func (c *CachedDatastore) ReadTTUDirectMatches(context.Context, string, storage.TTUDirectFilter, storage.ReadOptions, func(storage.TTUDirectMatch) bool) (bool, error) {
+	return false, nil
+}

@@ -100,3 +100,8 @@ func (c *cachedOpenFGADatastore) Close() {
 	c.cache.Stop()
 	c.OpenFGADatastore.Close()
 }
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher].
+func (c *cachedOpenFGADatastore) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	return storage.ReadTTUDirectMatches(ctx, c.OpenFGADatastore, store, filter, options, yield)
+}

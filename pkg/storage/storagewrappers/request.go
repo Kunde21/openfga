@@ -1,6 +1,7 @@
 package storagewrappers
 
 import (
+	"context"
 	"time"
 
 	openfgav1 "github.com/openfga/api/proto/openfga/v1"
@@ -103,4 +104,9 @@ func NewRequestStorageWrapper(ds storage.RelationshipTupleReader, requestContext
 
 func (s *RequestStorageWrapper) GetMetadata() Metadata {
 	return s.StorageInstrumentation.GetMetadata()
+}
+
+// ReadTTUDirectMatches see [storage.TTUDirectMatcher].
+func (s *RequestStorageWrapper) ReadTTUDirectMatches(ctx context.Context, store string, filter storage.TTUDirectFilter, options storage.ReadOptions, yield func(storage.TTUDirectMatch) bool) (bool, error) {
+	return storage.ReadTTUDirectMatches(ctx, s.RelationshipTupleReader, store, filter, options, yield)
 }

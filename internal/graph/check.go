@@ -896,6 +896,17 @@ func (c *LocalChecker) checkTTU(parentctx context.Context, req *ResolveCheckRequ
 		}
 
 		storeID := req.GetStoreID()
+		isUserset := tuple.IsObjectRelation(tk.GetUser())
+
+		if !isUserset && typesys.TTUUseWeight2Resolver(objectType, relation, userType, rewrite.GetTupleToUserset()) {
+			if filter, ok := ttuDirectFilter(typesys, req, rewrite); ok {
+				resp, ok, err := resolveTTUDirect(ctx, req, typesys, ds, filter, opts)
+				if err != nil || ok {
+					return resp, err
+				}
+			}
+		}
+
 		iter, err := ds.Read(
 			ctx,
 			storeID,
@@ -920,7 +931,6 @@ func (c *LocalChecker) checkTTU(parentctx context.Context, req *ResolveCheckRequ
 		possibleStrategies := map[string]*planner.PlanConfig{
 			defaultResolver: defaultPlan,
 		}
-		isUserset := tuple.IsObjectRelation(tk.GetUser())
 
 		if !isUserset {
 			if typesys.TTUUseWeight2Resolver(objectType, relation, userType, rewrite.GetTupleToUserset()) {
